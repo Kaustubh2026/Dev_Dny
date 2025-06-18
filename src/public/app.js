@@ -245,10 +245,16 @@ function showNotification(message, type = 'info') {
 
 // Show loading indicator
 function showLoading() {
-    loadingIndicator.classList.remove('hidden');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('hidden');
+    }
 }
 
 // Hide loading indicator
 function hideLoading() {
-    loadingIndicator.classList.add('hidden');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('hidden');
+    }
 } 
