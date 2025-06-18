@@ -36,13 +36,9 @@ const limiter = rateLimit({
 app.use('/api', limiter); // Apply rate limiting only to API routes
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase credentials. Please check your .env file.');
-    process.exit(1);
-}
+const supabaseUrl = 'https://vcpgstlpfrmnadjuxipj.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjcGdzdGxwZnJtbmFkanV4aXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNDkzNzksImV4cCI6MjA2NTgyNTM3OX0.fQWmfrMEM2kbqrF47dknzVmRGZ4lZSaATwijQn07uc0';
+const OPENWEATHER_API_KEY = 'e67ccacc99704e84c8cc5bb3758f294b';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -98,5 +94,5 @@ app.listen(PORT, () => {
     console.log(`- PORT: ${PORT}`);
     console.log(`- SUPABASE_URL: ${supabaseUrl ? '✓' : '✗'}`);
     console.log(`- SUPABASE_ANON_KEY: ${supabaseKey ? '✓' : '✗'}`);
-    console.log(`- OPENWEATHER_API_KEY: ${process.env.OPENWEATHER_API_KEY ? '✓' : '✗'}`);
+    console.log(`- OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY ? '✓' : '✗'}`);
 }); 

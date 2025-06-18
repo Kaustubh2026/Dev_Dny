@@ -7,7 +7,8 @@ const weatherCache = new Map();
 
 class WeatherService {
   constructor() {
-    this.apiKey = process.env.OPENWEATHER_API_KEY;
+    // Manually add your OpenWeatherMap API key here
+    this.apiKey = 'e67ccacc99704e84c8cc5bb3758f294b'; // <-- Provided OpenWeatherMap API key
     this.baseUrl = 'https://api.openweathermap.org/data/2.5';
   }
 

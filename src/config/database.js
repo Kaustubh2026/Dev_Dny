@@ -1,17 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// Manually add your Supabase credentials here
+const SUPABASE_URL = 'https://vcpgstlpfrmnadjuxipj.supabase.co'; // <-- REPLACE with your actual Supabase URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjcGdzdGxwZnJtbmFkanV4aXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNDkzNzksImV4cCI6MjA2NTgyNTM3OX0.fQWmfrMEM2kbqrF47dknzVmRGZ4lZSaATwijQn07uc0'; // <-- REPLACE with your actual anon key
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials. Please check your .env file.');
-  console.error('Required environment variables:');
-  console.error('SUPABASE_URL=your_supabase_url');
-  console.error('SUPABASE_ANON_KEY=your_supabase_anon_key');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 module.exports = supabase;
