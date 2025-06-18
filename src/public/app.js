@@ -26,36 +26,41 @@ async function handleEventSubmit(e) {
     e.preventDefault();
     showLoading();
 
-    const formData = new FormData(e.target);
-    const eventData = {
-        name: formData.get('name'),
-        location: formData.get('location'),
-        date: formData.get('date'),
-        event_type: formData.get('event_type'),
-        category: formData.get('category')
+    const formData = {
+        name: document.getElementById('eventName').value,
+        location: document.getElementById('location').value,
+        date: document.getElementById('date').value,
+        event_type: document.getElementById('eventType').value,
+        category: document.getElementById('category').value
     };
 
     try {
-        const response = await fetch(`${API_URL}/events`, {
+        const response = await fetch('/api/events', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(eventData)
+            body: JSON.stringify(formData)
         });
 
-        const result = await response.json();
-
         if (!response.ok) {
-            throw new Error(result.message || 'Failed to create event');
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        showNotification('Event created successfully!', 'success');
-        e.target.reset();
+        const result = await response.json();
+        console.log('Event created:', result);
+        
+        // Clear form
+        this.reset();
+        
+        // Reload events
         await loadEvents();
+        
+        // Show success message
+        showNotification('Event created successfully!', 'success');
     } catch (error) {
         console.error('Error creating event:', error);
-        showNotification(error.message, 'error');
+        showNotification('Error creating event: ' + error.message, 'error');
     } finally {
         hideLoading();
     }
@@ -65,17 +70,24 @@ async function handleEventSubmit(e) {
 async function loadEvents() {
     showLoading();
     try {
-        const response = await fetch(`${API_URL}/events`);
-        const result = await response.json();
-
+        const response = await fetch('/api/events');
         if (!response.ok) {
-            throw new Error(result.message || 'Failed to load events');
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const data = await response.json();
+        const eventsList = document.getElementById('eventsList');
+        eventsList.innerHTML = '';
 
-        displayEvents(result.data);
+        data.data.forEach(event => {
+            const eventElement = document.createElement('div');
+            eventElement.className = 'event-card';
+            eventElement.innerHTML = createEventCard(event);
+            eventsList.appendChild(eventElement);
+        });
     } catch (error) {
         console.error('Error loading events:', error);
-        showNotification(error.message, 'error');
+        showNotification('Error loading events: ' + error.message, 'error');
     } finally {
         hideLoading();
     }

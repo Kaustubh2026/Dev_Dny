@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Event Planner</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link href="/styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
     <style>
         .loading-spinner {
             border: 4px solid #f3f3f3;
@@ -23,84 +23,58 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="main-title">Smart Event Planner</h1>
+        <h1>Smart Event Planner</h1>
         
-        <!-- Event Form -->
-        <div class="card mb-8">
-            <h2 class="section-title">Create New Event</h2>
-            <form id="eventForm" class="form">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="name">Event Name</label>
-                        <input type="text" id="name" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="location">Location</label>
-                        <input type="text" id="location" name="location" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="date">Date & Time</label>
-                        <input type="datetime-local" id="date" name="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="event_type">Event Type</label>
-                        <select id="event_type" name="event_type" required>
-                            <option value="">Select event type</option>
-                            <option value="Outdoor Sports">Outdoor Sports</option>
-                            <option value="Picnic">Picnic</option>
-                            <option value="Beach Day">Beach Day</option>
-                            <option value="Hiking">Hiking</option>
-                            <option value="Camping">Camping</option>
-                            <option value="Outdoor Concert">Outdoor Concert</option>
-                            <option value="Wedding">Wedding</option>
-                            <option value="Party">Party</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="category">Category</label>
-                        <select id="category" name="category" required>
-                            <option value="">Select category</option>
-                            <option value="Sports">Sports</option>
-                            <option value="Leisure">Leisure</option>
-                            <option value="Adventure">Adventure</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Social">Social</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Create Event</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Events List -->
-        <div class="card">
-            <h2 class="section-title">Your Events</h2>
-            <div id="eventsList" class="space-y-4">
-                <!-- Events will be loaded here -->
+        <form id="eventForm" class="event-form">
+            <div class="form-group">
+                <label for="eventName">Event Name:</label>
+                <input type="text" id="eventName" name="name" required>
             </div>
-        </div>
-
-        <!-- Alternatives Modal -->
-        <div id="alternativesModal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Alternative Dates</h3>
-                    <button id="closeModalBtn" class="close-btn">&times;</button>
-                </div>
-                <div id="alternativesList">
-                    <!-- Alternatives will be loaded here -->
-                </div>
+            
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" id="location" name="location" required>
             </div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="loading-overlay hidden">
-            <div class="loading-spinner"></div>
+            
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="eventType">Event Type:</label>
+                <select id="eventType" name="event_type" required>
+                    <option value="sports">Sports</option>
+                    <option value="wedding">Wedding</option>
+                    <option value="hiking">Hiking</option>
+                    <option value="picnic">Picnic</option>
+                    <option value="camping">Camping</option>
+                    <option value="concert">Concert</option>
+                    <option value="party">Party</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category" name="category" required>
+                    <option value="outdoor">Outdoor</option>
+                    <option value="indoor">Indoor</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            
+            <button type="submit">Create Event</button>
+        </form>
+        
+        <div id="eventsList" class="events-list">
+            <!-- Events will be loaded here -->
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="/app.js"></script>
 </body>
 </html> 

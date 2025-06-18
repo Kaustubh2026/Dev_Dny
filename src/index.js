@@ -11,19 +11,26 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 
 // Middleware
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
-            styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
-            imgSrc: ["'self'", "data:", "openweathermap.org"],
-        },
-    },
-}));
 app.use(cors());
-app.use(express.json());
 app.use(morgan('dev'));
+app.use(express.json());
+
+// Temporarily disable helmet for development
+// app.use(helmet({
+//     contentSecurityPolicy: {
+//         directives: {
+//             defaultSrc: ["'self'"],
+//             scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+//             styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+//             imgSrc: ["'self'", "data:", "openweathermap.org"],
+//             connectSrc: ["'self'", "http://localhost:3000", "https://api.openweathermap.org", "https://vcpgstlpfrmnadjuxipj.supabase.co"],
+//             fontSrc: ["'self'", "data:", "cdn.jsdelivr.net"],
+//             objectSrc: ["'none'"],
+//             mediaSrc: ["'self'"],
+//             frameSrc: ["'none'"]
+//         },
+//     },
+// }));
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
