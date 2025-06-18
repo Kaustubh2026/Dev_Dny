@@ -54,9 +54,30 @@ const OPENWEATHER_API_KEY = 'e67ccacc99704e84c8cc5bb3758f294b';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Test database connection
+async function testDatabaseConnection() {
+    try {
+        const { data, error } = await supabase.from('events').select('count').limit(1);
+        if (error) throw error;
+        console.log('Database connection successful');
+    } catch (error) {
+        console.error('Database connection error:', error);
+        process.exit(1);
+    }
+}
+
 // API Routes
 const eventRoutes = require('./routes/events');
 const weatherRoutes = require('./routes/weather');
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+    res.json({
+        status: 'success',
+        message: 'API is working!',
+        timestamp: new Date().toISOString()
+    });
+});
 
 // Mount API routes under /api prefix
 app.use('/api/events', eventRoutes);
@@ -90,21 +111,31 @@ app.get('*', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+        body: req.body
+    });
+    
     res.status(500).json({
         status: 'error',
-        message: 'Something went wrong!',
+        message: 'Internal server error',
         error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server is running on port ${PORT}`);
     console.log('Environment variables loaded:');
     console.log(`- PORT: ${PORT}`);
     console.log(`- SUPABASE_URL: ${supabaseUrl ? '✓' : '✗'}`);
     console.log(`- SUPABASE_ANON_KEY: ${supabaseKey ? '✓' : '✗'}`);
     console.log(`- OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY ? '✓' : '✗'}`);
+    
+    // Test database connection on startup
+    await testDatabaseConnection();
 }); 

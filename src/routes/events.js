@@ -1,7 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/database');
+const { createClient } = require('@supabase/supabase-js');
+const axios = require('axios');
 const weatherService = require('../services/weatherService');
+
+// Initialize Supabase client
+const supabaseUrl = 'https://vcpgstlpfrmnadjuxipj.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjcGdzdGxwZnJtbmFkanV4aXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNDkzNzksImV4cCI6MjA2NTgyNTM3OX0.fQWmfrMEM2kbqrF47dknzVmRGZ4lZSaATwijQn07uc0';
+const OPENWEATHER_API_KEY = 'e67ccacc99704e84c8cc5bb3758f294b';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Helper function to get weather data
+async function getWeatherData(location, date) {
+    try {
+        const response = await axios.get(`https://api.openweathermap.org/data/2.5/forecast`, {
+            params: {
+                q: location,
+                appid: OPENWEATHER_API_KEY,
+                units: 'metric'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Weather API error:', error.response?.data || error.message);
+        throw new Error('Failed to fetch weather data');
+    }
+}
 
 // Create a new event
 router.post('/', async (req, res) => {
@@ -15,8 +40,17 @@ router.post('/', async (req, res) => {
             });
         }
 
+        // Validate date format
+        const eventDate = new Date(date);
+        if (isNaN(eventDate.getTime())) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid date format'
+            });
+        }
+
         // Get weather data for the event
-        const weatherData = await weatherService.getWeatherByLocation(location, date);
+        const weatherData = await getWeatherData(location, date);
         const suitability = weatherService.calculateSuitabilityScore(weatherData, event_type);
 
         // Start a transaction
@@ -42,11 +76,11 @@ router.post('/', async (req, res) => {
             .insert([
                 {
                     event_id: event.id,
-                    temperature: weatherData.temperature,
-                    humidity: weatherData.humidity,
-                    wind_speed: weatherData.wind_speed,
-                    precipitation: weatherData.precipitation,
-                    weather_condition: weatherData.weather_description,
+                    temperature: weatherData.list[0].main.temp,
+                    humidity: weatherData.list[0].main.humidity,
+                    wind_speed: weatherData.list[0].wind.speed,
+                    precipitation: weatherData.list[0].pop,
+                    weather_condition: weatherData.list[0].weather[0].main,
                     timestamp: new Date(date).toISOString()
                 }
             ]);
@@ -104,17 +138,55 @@ router.get('/', async (req, res) => {
             `)
             .order('date', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+        }
 
         res.json({
             status: 'success',
             data
         });
     } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error('Get events error:', error);
         res.status(500).json({
             status: 'error',
-            message: error.message
+            message: 'Failed to fetch events'
+        });
+    }
+});
+
+// Get event by ID
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+        }
+
+        if (!data) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Event not found'
+            });
+        }
+
+        res.json({
+            status: 'success',
+            data
+        });
+    } catch (error) {
+        console.error('Get event error:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch event'
         });
     }
 });
@@ -146,18 +218,18 @@ router.put('/:id', async (req, res) => {
             const newDate = date || event.data.date;
             const newEventType = event_type || event.data.event_type;
 
-            const weatherData = await weatherService.getWeatherByLocation(newLocation, newDate);
+            const weatherData = await getWeatherData(newLocation, newDate);
             const suitability = weatherService.calculateSuitabilityScore(weatherData, newEventType);
 
             // Update weather data
             await supabase
                 .from('weather_data')
                 .update({
-                    temperature: weatherData.temperature,
-                    humidity: weatherData.humidity,
-                    wind_speed: weatherData.wind_speed,
-                    precipitation: weatherData.precipitation,
-                    weather_condition: weatherData.weather_description,
+                    temperature: weatherData.list[0].main.temp,
+                    humidity: weatherData.list[0].main.humidity,
+                    wind_speed: weatherData.list[0].wind.speed,
+                    precipitation: weatherData.list[0].pop,
+                    weather_condition: weatherData.list[0].weather[0].main,
                     timestamp: new Date(newDate).toISOString()
                 })
                 .eq('event_id', id);
@@ -183,17 +255,27 @@ router.put('/:id', async (req, res) => {
             `)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Event not found'
+            });
+        }
 
         res.json({
             status: 'success',
-            data
+            data: data[0]
         });
     } catch (error) {
-        console.error('Error updating event:', error);
+        console.error('Update event error:', error);
         res.status(500).json({
             status: 'error',
-            message: error.message
+            message: 'Failed to update event'
         });
     }
 });
@@ -202,28 +284,45 @@ router.put('/:id', async (req, res) => {
 router.get('/:id/suitability', async (req, res) => {
     try {
         const { id } = req.params;
-
-        const { data, error } = await supabase
+        
+        // Get event details
+        const { data: event, error: eventError } = await supabase
             .from('events')
-            .select(`
-                *,
-                weather_data (*),
-                event_weather_analysis (*)
-            `)
+            .select('*')
             .eq('id', id)
             .single();
 
-        if (error) throw error;
+        if (eventError) {
+            console.error('Supabase error:', eventError);
+            throw eventError;
+        }
+
+        if (!event) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Event not found'
+            });
+        }
+
+        // Get weather data
+        const weatherData = await getWeatherData(event.location, event.date);
+        
+        // Analyze weather suitability
+        const suitability = weatherService.calculateSuitabilityScore(weatherData, event.event_type);
 
         res.json({
             status: 'success',
-            data
+            data: {
+                event,
+                weather: weatherData,
+                suitability
+            }
         });
     } catch (error) {
-        console.error('Error getting event suitability:', error);
+        console.error('Get suitability error:', error);
         res.status(500).json({
             status: 'error',
-            message: error.message
+            message: 'Failed to get weather suitability'
         });
     }
 });
@@ -241,56 +340,70 @@ router.get('/:id/alternatives', async (req, res) => {
             });
         }
 
-        const { data: event, error } = await supabase
+        // Get event details
+        const { data: event, error: eventError } = await supabase
             .from('events')
             .select('*')
             .eq('id', id)
             .single();
 
-        if (error || !event) {
-            console.error('Event not found or DB error:', error);
+        if (eventError) {
+            console.error('Supabase error:', eventError);
+            throw eventError;
+        }
+
+        if (!event) {
             return res.status(404).json({
                 status: 'error',
                 message: 'Event not found'
             });
         }
 
-        let alternatives = [];
-        try {
-            alternatives = await weatherService.getAlternativeDates(
-                event.location,
-                start_date,
-                end_date,
-                event.event_type
-            );
-        } catch (weatherError) {
-            console.error('Weather API error:', weatherError);
-            return res.status(502).json({
-                status: 'error',
-                message: 'Weather service error: ' + weatherError.message
-            });
-        }
-
-        if (!alternatives || alternatives.length === 0) {
-            return res.status(200).json({
-                status: 'success',
-                data: [],
-                message: 'No suitable alternative dates found for this event.'
-            });
-        }
+        // Get weather data for the date range
+        const weatherData = await getWeatherData(event.location, start_date);
+        
+        // Find alternative dates
+        const alternatives = findAlternativeDates(weatherData, event.event_type, start_date, end_date);
 
         res.json({
             status: 'success',
-            data: alternatives
+            data: {
+                event,
+                alternatives
+            }
         });
     } catch (error) {
-        console.error('Error getting alternative dates:', error);
+        console.error('Get alternatives error:', error);
         res.status(500).json({
             status: 'error',
-            message: error.message || 'Unknown error occurred.'
+            message: 'Failed to get alternative dates'
         });
     }
 });
+
+// Helper function to find alternative dates
+function findAlternativeDates(weatherData, eventType, startDate, endDate) {
+    const alternatives = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    weatherData.list.forEach(forecast => {
+        const forecastDate = new Date(forecast.dt * 1000);
+        if (forecastDate >= start && forecastDate <= end) {
+            const suitability = weatherService.calculateSuitabilityScore({ list: [forecast] }, eventType);
+            if (suitability.score === 'Good') {
+                alternatives.push({
+                    date: forecastDate.toISOString().split('T')[0],
+                    weather: forecast.weather[0].main,
+                    temperature: forecast.main.temp,
+                    suitability: suitability.analysis
+                });
+            }
+        }
+    });
+
+    return alternatives;
+}
 
 // Weather check for an existing event
 router.post('/:id/weather-check', async (req, res) => {
@@ -305,18 +418,18 @@ router.post('/:id/weather-check', async (req, res) => {
         if (eventError || !event) throw eventError || new Error('Event not found');
 
         // Get new weather data
-        const weatherData = await weatherService.getWeatherByLocation(event.location, event.date);
+        const weatherData = await getWeatherData(event.location, event.date);
         const suitability = weatherService.calculateSuitabilityScore(weatherData, event.event_type);
 
         // Update weather_data
         await supabase
             .from('weather_data')
             .update({
-                temperature: weatherData.temperature,
-                humidity: weatherData.humidity,
-                wind_speed: weatherData.wind_speed,
-                precipitation: weatherData.precipitation,
-                weather_condition: weatherData.weather_description,
+                temperature: weatherData.list[0].main.temp,
+                humidity: weatherData.list[0].main.humidity,
+                wind_speed: weatherData.list[0].wind.speed,
+                precipitation: weatherData.list[0].pop,
+                weather_condition: weatherData.list[0].weather[0].main,
                 timestamp: new Date(event.date).toISOString()
             })
             .eq('event_id', id);
