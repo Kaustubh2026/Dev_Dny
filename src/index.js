@@ -28,6 +28,11 @@ app.use(morgan('dev'));
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve favicon
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'favicon.ico'));
+});
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -71,8 +76,8 @@ app.get('/api', (req, res) => {
     });
 });
 
-// Serve the frontend for all other routes
-app.get('/', (req, res) => {
+// Serve the main HTML file for all other routes
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
